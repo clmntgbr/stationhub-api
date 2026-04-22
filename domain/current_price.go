@@ -5,7 +5,8 @@ import "time"
 type CurrentPrice struct {
 	Price
 
-	UpdatedAt time.Time `gorm:"not null" json:"updated_at"`
+	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt time.Time `gorm:"autoUpdateTime" json:"updated_at"`
 }
 
 func (CurrentPrice) TableName() string {

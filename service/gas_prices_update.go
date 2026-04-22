@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -160,29 +161,19 @@ func (s *GasPricesUpdateService) processPDV(pdv dto.PDV) error {
 }
 
 func (s *GasPricesUpdateService) processPrices(tx *gorm.DB, stationID uuid.UUID, prices []dto.Prix) error {
-	now := time.Now()
-
 	for _, prix := range prices {
-		priceDate, _ := time.Parse("2006-01-02 15:04:05", prix.Maj)
+		priceDate, err := time.Parse("2006-01-02 15:04:05", prix.Maj)
+		if err != nil {
+			return fmt.Errorf("invalid date format for prix %s: %w", prix.ID, err)
+		}
 
 		existingPrice, err := s.currentPriceRepository.FindByStationAndType(stationID, prix.ID, tx)
 
-		if err == nil {
-			if existingPrice.Value != prix.Valeur {
-				existingPrice.Value = prix.Valeur
-				existingPrice.Date = priceDate
-				existingPrice.UpdatedAt = now
-			} else if priceDate.After(existingPrice.Date) {
-				existingPrice.Date = priceDate
-				existingPrice.UpdatedAt = now
-			} else {
-				existingPrice.UpdatedAt = now
-			}
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			return fmt.Errorf("failed to find current price: %w", err)
+		}
 
-			if err := s.currentPriceRepository.Update(existingPrice, tx); err != nil {
-				return err
-			}
-		} else {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			newPrice := &domain.CurrentPrice{
 				Price: domain.Price{
 					StationID: stationID,
@@ -192,12 +183,21 @@ func (s *GasPricesUpdateService) processPrices(tx *gorm.DB, stationID uuid.UUID,
 					Currency:  "EUR",
 					Date:      priceDate,
 				},
-				UpdatedAt: now,
 			}
-
 			if err := s.currentPriceRepository.Create(newPrice, tx); err != nil {
-				return err
+				return fmt.Errorf("failed to create current price: %w", err)
 			}
+			continue
+		}
+
+		if !priceDate.After(existingPrice.Date) {
+			continue
+		}
+
+		existingPrice.Value = prix.Valeur
+		existingPrice.Date = priceDate
+		if err := s.currentPriceRepository.Update(existingPrice, tx); err != nil {
+			return fmt.Errorf("failed to update current price: %w", err)
 		}
 	}
 
