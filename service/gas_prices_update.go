@@ -122,8 +122,8 @@ func (s *GasPricesUpdateService) processPDV(pdv dto.PDV) error {
 			City:        pdv.Ville,
 			State:       pdv.CP,
 			Country:     "France",
-			Latitude:    pdv.Latitude,
-			Longitude:   pdv.Longitude,
+			Latitude:    pdv.Latitude / 1000000,
+			Longitude:   pdv.Longitude / 1000000,
 		}
 
 		if err := s.addressRepository.Create(address, tx); err != nil {

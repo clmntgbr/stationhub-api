@@ -19,6 +19,8 @@ type Station struct {
 	AddressID uuid.UUID `gorm:"type:uuid;not null" json:"address_id"`
 	Address   Address   `gorm:"foreignKey:AddressID" json:"address"`
 
+	Status StationStatus `gorm:"not null;default:'created'" json:"status"`
+
 	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt time.Time `gorm:"autoUpdateTime" json:"updated_at"`
 }
