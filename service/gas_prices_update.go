@@ -164,7 +164,7 @@ func (s *GasPricesUpdateService) processPrices(tx *gorm.DB, stationID uuid.UUID,
 	for _, prix := range prices {
 		priceDate, err := time.Parse("2006-01-02 15:04:05", prix.Maj)
 		if err != nil {
-			return fmt.Errorf("invalid date format for prix %s: %w", prix.ID, err)
+			return fmt.Errorf("invalid date format for prix %s: %w", prix.Nom, err)
 		}
 
 		existingPrice, err := s.currentPriceRepository.FindByStationAndType(stationID, prix.ID, tx)
