@@ -36,23 +36,33 @@ func (r *StationRepository) FindByExternalID(externalID string) *domain.Station 
 	return &station
 }
 
-func (r *StationRepository) CreateStationWithAddress(station *domain.Station, address *domain.Address, tx *gorm.DB) (bool, error) {
+func (r *StationRepository) CreateStationWithAddress(station *domain.Station, address *domain.Address, tx *gorm.DB) error {
+	var existingStation domain.Station
+	err := tx.Select("id", "external_id", "address_id").Where("external_id = ?", station.ExternalID).First(&existingStation).Error
+
+	if err == nil {
+		station.AddressID = existingStation.AddressID
+		
+		result := tx.Omit("Address").Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "external_id"}},
+			DoUpdates: clause.AssignmentColumns([]string{"services", "name", "type", "updated_at"}),
+		}).Create(station)
+
+		return result.Error
+	}
+
 	if err := tx.Create(address).Error; err != nil {
-		return false, err
+		return err
 	}
 
 	station.AddressID = address.ID
 
 	result := tx.Omit("Address").Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "external_id"}},
-		DoNothing: true,
+		DoUpdates: clause.AssignmentColumns([]string{"services", "name", "type", "updated_at"}),
 	}).Create(station)
 
-	if result.Error != nil {
-		return false, result.Error
-	}
-
-	return result.RowsAffected > 0, nil
+	return result.Error
 }
 
 func (r *StationRepository) BeginTransaction() *gorm.DB {

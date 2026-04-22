@@ -34,6 +34,9 @@ func (s *GasPricesUpdateService) UpdateGasPrices(xmlFilePath string) error {
 		return fmt.Errorf("failed to extract gas prices file: %w", err)
 	}
 
+	totalPDVs := len(pdvListe.PDVs)
+	log.Printf("Starting ingestion of %d stations with %d workers", totalPDVs, WorkerCount)
+
 	jobQueue := make(chan dto.PDV, JobQueueSize)
 	var wg sync.WaitGroup
 
@@ -49,6 +52,7 @@ func (s *GasPricesUpdateService) UpdateGasPrices(xmlFilePath string) error {
 
 	wg.Wait()
 
+	log.Printf("Ingestion completed for %d stations", totalPDVs)
 	return nil
 }
 
@@ -95,15 +99,9 @@ func (s *GasPricesUpdateService) processPDV(pdv dto.PDV) error {
 		Services:   pdv.Services.List,
 	}
 
-	created, err := s.stationRepository.CreateStationWithAddress(station, address, tx)
-	if err != nil {
+	if err := s.stationRepository.CreateStationWithAddress(station, address, tx); err != nil {
 		tx.Rollback()
 		return fmt.Errorf("failed to create station with address: %w", err)
-	}
-
-	if !created {
-		tx.Rollback()
-		return nil
 	}
 
 	if err := tx.Commit().Error; err != nil {
