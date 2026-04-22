@@ -6,12 +6,16 @@ import (
 )
 
 type CurrentPriceOutput struct {
-	ID        string    `json:"id"`
-	Value     float64   `json:"value"`
-	Type      string    `json:"type"`
-	Currency  string    `json:"currency"`
-	Date      time.Time `json:"date"`
-	UpdatedAt time.Time `json:"updatedAt"`
+	MinimalCurrentPriceOutput MinimalCurrentPriceOutput `json:"minimalCurrentPriceOutput"`
+	ID                        string                    `json:"id"`
+	Currency                  string                    `json:"currency"`
+	UpdatedAt                 time.Time                 `json:"updatedAt"`
+}
+
+type MinimalCurrentPriceOutput struct {
+	Value float64   `json:"value"`
+	Type  string    `json:"type"`
+	Date  time.Time `json:"date"`
 }
 
 func NewCurrentPricesOutput(currentPrices []domain.CurrentPrice) []CurrentPriceOutput {
@@ -22,13 +26,27 @@ func NewCurrentPricesOutput(currentPrices []domain.CurrentPrice) []CurrentPriceO
 	return outputs
 }
 
+func NewMinimalCurrentPricesOutput(currentPrices []domain.CurrentPrice) []MinimalCurrentPriceOutput {
+	outputs := make([]MinimalCurrentPriceOutput, len(currentPrices))
+	for i, currentPrice := range currentPrices {
+		outputs[i] = NewMinimalCurrentPriceOutput(currentPrice)
+	}
+	return outputs
+}
+
+func NewMinimalCurrentPriceOutput(currentPrice domain.CurrentPrice) MinimalCurrentPriceOutput {
+	return MinimalCurrentPriceOutput{
+		Value: currentPrice.Value,
+		Type:  currentPrice.Type,
+		Date:  currentPrice.Date,
+	}
+}
+
 func NewCurrentPriceOutput(currentPrice domain.CurrentPrice) CurrentPriceOutput {
 	return CurrentPriceOutput{
-		ID:        currentPrice.ID.String(),
-		Value:     currentPrice.Value,
-		Type:      currentPrice.Type,
-		Currency:  currentPrice.Currency,
-		Date:      currentPrice.Date,
-		UpdatedAt: currentPrice.UpdatedAt,
+		MinimalCurrentPriceOutput: NewMinimalCurrentPriceOutput(currentPrice),
+		ID:                        currentPrice.ID.String(),
+		Currency:                  currentPrice.Currency,
+		UpdatedAt:                 currentPrice.UpdatedAt,
 	}
 }
