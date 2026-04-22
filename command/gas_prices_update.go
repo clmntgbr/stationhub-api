@@ -36,21 +36,15 @@ func NewGasPricesUpdateCommand() *cobra.Command {
 				return fmt.Errorf("failed to update gas prices: %w", err)
 			}
 
-			fmt.Println("✅ Gas prices updated")
-
 			err = gasFileService.Delete(zipFilePath)
 			if err != nil {
 				return fmt.Errorf("failed to delete zip file: %w", err)
 			}
 
-			fmt.Println("✅ Zip file deleted")
-
 			err = gasFileService.Delete(extractedPath)
 			if err != nil {
 				return fmt.Errorf("failed to delete extracted file: %w", err)
 			}
-
-			fmt.Println("✅ Extracted file deleted")
 
 			return nil
 		},

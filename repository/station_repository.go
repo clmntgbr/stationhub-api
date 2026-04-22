@@ -4,6 +4,7 @@ import (
 	"stationhub-api/domain"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type StationRepository struct {
@@ -33,4 +34,27 @@ func (r *StationRepository) FindByExternalID(externalID string) *domain.Station 
 		return nil
 	}
 	return &station
+}
+
+func (r *StationRepository) CreateStationWithAddress(station *domain.Station, address *domain.Address, tx *gorm.DB) (bool, error) {
+	if err := tx.Create(address).Error; err != nil {
+		return false, err
+	}
+
+	station.AddressID = address.ID
+
+	result := tx.Omit("Address").Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "external_id"}},
+		DoNothing: true,
+	}).Create(station)
+
+	if result.Error != nil {
+		return false, result.Error
+	}
+
+	return result.RowsAffected > 0, nil
+}
+
+func (r *StationRepository) BeginTransaction() *gorm.DB {
+	return r.db.Begin()
 }
