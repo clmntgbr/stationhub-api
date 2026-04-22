@@ -1,7 +1,9 @@
 package config
 
 import (
+	"fmt"
 	"log"
+	"time"
 
 	"stationhub-api/domain"
 
@@ -33,10 +35,101 @@ func AutoMigrate(db *gorm.DB) {
 		&domain.Address{},
 		&domain.GooglePlace{},
 		&domain.CurrentPrice{},
-		&domain.PriceHistory{},
 	)
+
+	CreatePriceHistoryPartitionBase(db)
+	InitPartitions(db)
 
 	if err != nil {
 		log.Fatal("failed to migrate database: ", err)
 	}
+}
+
+func CreatePriceHistoryPartitionBase(db *gorm.DB) {
+	err := db.Exec(`
+		CREATE TABLE IF NOT EXISTS price_histories (
+			id uuid DEFAULT gen_random_uuid(),
+			value decimal NOT NULL,
+			currency text NOT NULL,
+			type text NOT NULL,
+			type_id bigint NOT NULL,
+			date timestamptz NOT NULL,
+			station_id uuid NOT NULL,
+			created_at timestamptz,
+			updated_at timestamptz,
+
+			PRIMARY KEY (id, date),
+
+			CONSTRAINT fk_price_histories_station
+			FOREIGN KEY (station_id) REFERENCES stations(id)
+		)
+		PARTITION BY RANGE (date);
+		CREATE INDEX IF NOT EXISTS idx_price_histories_date ON price_histories (date);
+		CREATE INDEX IF NOT EXISTS idx_price_histories_station_id_date ON price_histories (station_id, date);
+	`).Error
+
+	if err != nil {
+		log.Fatal("failed to create partitioned table: ", err)
+	}
+}
+
+func InitPartitions(db *gorm.DB) {
+	now := time.Now()
+
+	_ = CreatePartitionIfNotExists(db, now.Year(), now.Month())
+
+	next := now.AddDate(0, 1, 0)
+	_ = CreatePartitionIfNotExists(db, next.Year(), next.Month())
+
+	_ = CreatePartitionsRange(db, now, 12)
+}
+
+func CreateInitialPartitions(db *gorm.DB) error {
+	now := time.Now().UTC()
+
+	start := time.Date(now.Year()-1, 1, 1, 0, 0, 0, 0, time.UTC)
+	end := time.Date(now.Year()+5, 1, 1, 0, 0, 0, 0, time.UTC)
+
+	for t := start; t.Before(end); t = t.AddDate(0, 1, 0) {
+		if err := CreatePartitionIfNotExists(db, t.Year(), t.Month()); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func CreatePartitionsRange(db *gorm.DB, start time.Time, months int) error {
+	for i := 0; i < months; i++ {
+		t := start.AddDate(0, i, 0)
+
+		year := t.Year()
+		month := t.Month()
+
+		if err := CreatePartitionIfNotExists(db, year, month); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func CreatePartitionIfNotExists(db *gorm.DB, year int, month time.Month) error {
+	start := time.Date(year, month, 1, 0, 0, 0, 0, time.UTC)
+	end := start.AddDate(0, 1, 0)
+
+	name := fmt.Sprintf("price_histories_%04d_%02d", year, month)
+
+	sql := fmt.Sprintf(`
+CREATE TABLE IF NOT EXISTS "%s"
+PARTITION OF price_histories
+FOR VALUES FROM ('%s') TO ('%s');
+CREATE INDEX IF NOT EXISTS idx_%s ON %s (station_id, date);
+`, name, start.Format("2006-01-02"), end.Format("2006-01-02"), name, name)
+
+	err := db.Exec(sql).Error
+	if err != nil {
+		return fmt.Errorf("failed to create partition: %w", err)
+	}
+
+	return nil
 }

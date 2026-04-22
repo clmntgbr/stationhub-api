@@ -216,12 +216,14 @@ func (s *GasPricesUpdateService) processPrices(tx *gorm.DB, stationID uuid.UUID,
 		history := &domain.PriceHistory{
 			Price: existingPrice.Price,
 		}
+
 		if err := s.priceHistoryRepository.Create(history, tx); err != nil {
 			return fmt.Errorf("failed to create price history: %w", err)
 		}
 
 		existingPrice.Value = prix.Valeur
 		existingPrice.Date = priceDate
+
 		if err := s.currentPriceRepository.Update(existingPrice, tx); err != nil {
 			return fmt.Errorf("failed to update current price: %w", err)
 		}
