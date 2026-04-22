@@ -14,6 +14,8 @@ type Station struct {
 
 	Services []string `gorm:"type:jsonb;serializer:json" json:"services"`
 
+	CurrentPrices []CurrentPrice `gorm:"foreignKey:StationID" json:"current_prices"`
+
 	AddressID uuid.UUID `gorm:"type:uuid;not null" json:"address_id"`
 	Address   Address   `gorm:"foreignKey:AddressID" json:"address"`
 

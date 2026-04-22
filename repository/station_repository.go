@@ -55,3 +55,12 @@ func (r *StationRepository) UpdateWithTx(station *domain.Station, tx *gorm.DB) e
 func (r *StationRepository) BeginTransaction() *gorm.DB {
 	return r.db.Begin()
 }
+
+func (r *StationRepository) FindAll() ([]domain.Station, error) {
+	var stations []domain.Station
+	err := r.db.Preload("Address").Preload("CurrentPrices").Limit(10).Find(&stations).Error
+	if err != nil {
+		return nil, err
+	}
+	return stations, nil
+}

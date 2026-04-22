@@ -1,10 +1,10 @@
 package main
 
 import (
-	"stationhub-api/config"
-	"stationhub-api/deps"
 	"fmt"
 	"log"
+	"stationhub-api/config"
+	"stationhub-api/deps"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/healthcheck"
@@ -58,6 +58,11 @@ func setupAPIRoutes(app *fiber.App, deps *deps.Dependencies) {
 
 	api.Use(deps.AuthenticateMiddleware.Protected())
 	setupUsersRoutes(api, deps)
+	setupStationsRoutes(api, deps)
+}
+
+func setupStationsRoutes(api fiber.Router, deps *deps.Dependencies) {
+	api.Get("/stations", deps.StationHandler.GetStations)
 }
 
 func setupUsersRoutes(api fiber.Router, deps *deps.Dependencies) {
