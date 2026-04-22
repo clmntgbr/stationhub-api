@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	WorkerCount = 8
+	WorkerCount  = 8
 	JobQueueSize = 100
 )
 
@@ -34,9 +34,6 @@ func (s *GasPricesUpdateService) UpdateGasPrices(xmlFilePath string) error {
 		return fmt.Errorf("failed to extract gas prices file: %w", err)
 	}
 
-	totalPDVs := len(pdvListe.PDVs)
-	log.Printf("Starting ingestion of %d stations with %d workers", totalPDVs, WorkerCount)
-
 	jobQueue := make(chan dto.PDV, JobQueueSize)
 	var wg sync.WaitGroup
 
@@ -52,7 +49,6 @@ func (s *GasPricesUpdateService) UpdateGasPrices(xmlFilePath string) error {
 
 	wg.Wait()
 
-	log.Printf("Ingestion completed for %d stations", totalPDVs)
 	return nil
 }
 
@@ -96,6 +92,7 @@ func (s *GasPricesUpdateService) processPDV(pdv dto.PDV) error {
 		ExternalID: pdv.ID,
 		Name:       pdv.Adresse + " " + pdv.Ville,
 		Type:       "gas",
+		Services:   pdv.Services.List,
 	}
 
 	created, err := s.stationRepository.CreateStationWithAddress(station, address, tx)

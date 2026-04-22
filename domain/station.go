@@ -12,6 +12,8 @@ type Station struct {
 	Name       string    `gorm:"null" json:"name"`
 	Type       string    `gorm:"null" json:"type"`
 
+	Services []string `gorm:"type:jsonb;serializer:json" json:"services"`
+
 	AddressID uuid.UUID `gorm:"type:uuid;not null" json:"address_id"`
 	Address   Address   `gorm:"foreignKey:AddressID" json:"address"`
 
