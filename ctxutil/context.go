@@ -1,8 +1,8 @@
 package ctxutil
 
 import (
-	"go-api/domain"
-	"go-api/errors"
+	"stationhub-api/domain"
+	"stationhub-api/errors"
 
 	"github.com/gofiber/fiber/v3"
 )

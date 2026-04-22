@@ -1,9 +1,9 @@
 package service
 
 import (
-	"go-api/domain"
-	"go-api/dto"
-	"go-api/repository"
+	"stationhub-api/domain"
+	"stationhub-api/dto"
+	"stationhub-api/repository"
 	"time"
 
 	"github.com/gofiber/fiber/v3"

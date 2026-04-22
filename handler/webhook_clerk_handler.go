@@ -2,9 +2,9 @@ package handler
 
 import (
 	"encoding/json"
-	"go-api/dto"
-	"go-api/errors"
-	"go-api/service"
+	"stationhub-api/dto"
+	"stationhub-api/errors"
+	"stationhub-api/service"
 	"log"
 
 	"github.com/gofiber/fiber/v3"

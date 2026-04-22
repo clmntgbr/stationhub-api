@@ -1,9 +1,9 @@
 package service
 
 import (
-	"go-api/config"
-	"go-api/errors"
-	"go-api/repository"
+	"stationhub-api/config"
+	"stationhub-api/errors"
+	"stationhub-api/repository"
 	"fmt"
 	"time"
 

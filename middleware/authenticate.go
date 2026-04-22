@@ -1,12 +1,12 @@
 package middleware
 
 import (
-	"go-api/ctxutil"
-	"go-api/errors"
-	"go-api/service"
+	"stationhub-api/ctxutil"
+	"stationhub-api/errors"
+	"stationhub-api/service"
 	"strings"
 
-	"go-api/repository"
+	"stationhub-api/repository"
 
 	"github.com/gofiber/fiber/v3"
 )

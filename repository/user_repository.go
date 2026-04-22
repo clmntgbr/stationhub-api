@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"go-api/domain"
+	"stationhub-api/domain"
 
 	"gorm.io/gorm"
 )

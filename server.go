@@ -1,8 +1,8 @@
 package main
 
 import (
-	"go-api/config"
-	"go-api/deps"
+	"stationhub-api/config"
+	"stationhub-api/deps"
 	"fmt"
 	"log"
 

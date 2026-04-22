@@ -2,7 +2,7 @@ package middleware
 
 import (
 	"encoding/json"
-	"go-api/dto"
+	"stationhub-api/dto"
 	"net/http"
 
 	"github.com/gofiber/fiber/v3"

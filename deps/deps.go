@@ -2,11 +2,11 @@
 package deps
 
 import (
-	"go-api/config"
-	"go-api/handler"
-	"go-api/middleware"
-	"go-api/repository"
-	"go-api/service"
+	"stationhub-api/config"
+	"stationhub-api/handler"
+	"stationhub-api/middleware"
+	"stationhub-api/repository"
+	"stationhub-api/service"
 
 	"gorm.io/gorm"
 )

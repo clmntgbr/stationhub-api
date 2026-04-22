@@ -48,10 +48,10 @@ prod-rebuild:
 # ============================================
 
 build-dev:
-	docker build --target development -t uplink-api:dev .
+	docker build --target development -t api-api:dev .
 
 build-prod:
-	docker build --target production -t uplink-api:prod .
+	docker build --target production -t api-api:prod .
 
 # ============================================
 # Utility commands

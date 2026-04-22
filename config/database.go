@@ -3,7 +3,7 @@ package config
 import (
 	"log"
 
-	"go-api/domain"
+	"stationhub-api/domain"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"

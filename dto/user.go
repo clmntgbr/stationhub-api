@@ -1,7 +1,7 @@
 package dto
 
 import (
-	"go-api/domain"
+	"stationhub-api/domain"
 	"time"
 )
 

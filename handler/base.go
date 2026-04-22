@@ -1,8 +1,8 @@
 package handler
 
 import (
-	"go-api/errors"
-	"go-api/validator"
+	"stationhub-api/errors"
+	"stationhub-api/validator"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"

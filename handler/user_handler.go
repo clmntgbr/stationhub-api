@@ -1,8 +1,8 @@
 package handler
 
 import (
-	"go-api/ctxutil"
-	"go-api/service"
+	"stationhub-api/ctxutil"
+	"stationhub-api/service"
 
 	"github.com/gofiber/fiber/v3"
 )

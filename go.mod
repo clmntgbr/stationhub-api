@@ -1,4 +1,4 @@
-module go-api
+module stationhub-api
 
 go 1.25.0
 
