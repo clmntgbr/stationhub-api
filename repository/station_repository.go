@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"fmt"
 	"stationhub-api/domain"
 
 	"gorm.io/gorm"
@@ -56,11 +57,34 @@ func (r *StationRepository) BeginTransaction() *gorm.DB {
 	return r.db.Begin()
 }
 
-func (r *StationRepository) FindAll() ([]domain.Station, error) {
+func (r *StationRepository) FindNearby(latitude, longitude float64, radiusKm float64) ([]domain.Station, error) {
 	var stations []domain.Station
-	err := r.db.Preload("Address").Preload("CurrentPrices").Limit(10).Find(&stations).Error
+
+	orderClause := fmt.Sprintf(`
+		ST_Distance(
+			ST_MakePoint(addresses.longitude, addresses.latitude)::geography,
+			ST_MakePoint(%f, %f)::geography
+		)
+	`, longitude, latitude)
+
+	err := r.db.
+		Joins("JOIN addresses ON addresses.id = stations.address_id").
+		Where(`
+			ST_DWithin(
+				ST_MakePoint(addresses.longitude, addresses.latitude)::geography,
+				ST_MakePoint(?, ?)::geography,
+				?
+			)
+		`, longitude, latitude, radiusKm*1000).
+		Order(orderClause).
+		Preload("Address").
+		Preload("CurrentPrices").
+		Limit(100).
+		Find(&stations).Error
+
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to find nearby stations: %w", err)
 	}
+
 	return stations, nil
 }

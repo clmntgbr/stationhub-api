@@ -29,6 +29,9 @@ func ConnectDatabase(cfg *Config) *gorm.DB {
 }
 
 func AutoMigrate(db *gorm.DB) {
+
+	InitDB(db)
+
 	err := db.AutoMigrate(
 		&domain.User{},
 		&domain.Station{},
@@ -42,6 +45,14 @@ func AutoMigrate(db *gorm.DB) {
 
 	if err != nil {
 		log.Fatal("failed to migrate database: ", err)
+	}
+}
+
+func InitDB(db *gorm.DB) {
+	err := db.Exec(`CREATE EXTENSION IF NOT EXISTS postgis;`).Error
+
+	if err != nil {
+		log.Fatal("failed to create postgis extension: ", err)
 	}
 }
 
