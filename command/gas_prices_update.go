@@ -17,14 +17,19 @@ func NewGasPricesUpdateCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg := config.Load()
 			db := config.ConnectDatabase(cfg)
+
 			gasFileService := service.NewGasFileService()
+
 			stationRepository := repository.NewStationRepository(db)
 			addressRepository := repository.NewAddressRepository(db)
 			currentPriceRepository := repository.NewCurrentPriceRepository(db)
+			priceHistoryRepository := repository.NewPriceHistoryRepository(db)
+
 			gasPricesUpdateService := service.NewGasPricesUpdateService(
 				stationRepository,
 				addressRepository,
 				currentPriceRepository,
+				priceHistoryRepository,
 			)
 
 			zipFilePath, err := gasFileService.DownloadGasFile()

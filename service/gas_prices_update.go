@@ -28,17 +28,20 @@ type GasPricesUpdateService struct {
 	stationRepository      *repository.StationRepository
 	addressRepository      *repository.AddressRepository
 	currentPriceRepository *repository.CurrentPriceRepository
+	priceHistoryRepository *repository.PriceHistoryRepository
 }
 
 func NewGasPricesUpdateService(
 	stationRepository *repository.StationRepository,
 	addressRepository *repository.AddressRepository,
 	currentPriceRepository *repository.CurrentPriceRepository,
+	priceHistoryRepository *repository.PriceHistoryRepository,
 ) *GasPricesUpdateService {
 	return &GasPricesUpdateService{
 		stationRepository:      stationRepository,
 		addressRepository:      addressRepository,
 		currentPriceRepository: currentPriceRepository,
+		priceHistoryRepository: priceHistoryRepository,
 	}
 }
 
@@ -187,6 +190,14 @@ func (s *GasPricesUpdateService) processPrices(tx *gorm.DB, stationID uuid.UUID,
 			if err := s.currentPriceRepository.Create(newPrice, tx); err != nil {
 				return fmt.Errorf("failed to create current price: %w", err)
 			}
+
+			history := &domain.PriceHistory{
+				Price: newPrice.Price,
+			}
+			if err := s.priceHistoryRepository.Create(history, tx); err != nil {
+				return fmt.Errorf("failed to create price history: %w", err)
+			}
+
 			continue
 		}
 
@@ -194,9 +205,23 @@ func (s *GasPricesUpdateService) processPrices(tx *gorm.DB, stationID uuid.UUID,
 			continue
 		}
 
+		if existingPrice.Value == prix.Valeur {
+			existingPrice.Date = priceDate
+			if err := s.currentPriceRepository.Update(existingPrice, tx); err != nil {
+				return fmt.Errorf("failed to update current price date: %w", err)
+			}
+			continue
+		}
+
+		history := &domain.PriceHistory{
+			Price: existingPrice.Price,
+		}
+		if err := s.priceHistoryRepository.Create(history, tx); err != nil {
+			return fmt.Errorf("failed to create price history: %w", err)
+		}
+
 		existingPrice.Value = prix.Valeur
 		existingPrice.Date = priceDate
-
 		if err := s.currentPriceRepository.Update(existingPrice, tx); err != nil {
 			return fmt.Errorf("failed to update current price: %w", err)
 		}
