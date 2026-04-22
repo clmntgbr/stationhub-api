@@ -14,11 +14,6 @@ import (
 type Dependencies struct {
 	UserRepo *repository.UserRepository
 
-	AuthenticateService *service.AuthenticateService
-	WebhookClerkService *service.WebhookClerkService
-	ClerkService        *service.ClerkService
-	UserService         *service.UserService
-
 	WebhookClerkHandler *handler.WebhookClerkHandler
 	UserHandler         *handler.UserHandler
 	StationHandler      *handler.StationHandler
@@ -46,14 +41,10 @@ func New(db *gorm.DB, cfg *config.Config) *Dependencies {
 
 	return &Dependencies{
 		UserRepo:               userRepo,
-		AuthenticateService:    authenticateService,
-		WebhookClerkService:    webhookClerkService,
-		UserService:            userService,
 		WebhookClerkHandler:    webhookClerkHandler,
 		UserHandler:            userHandler,
 		AuthenticateMiddleware: authenticateMiddleware,
 		ClerkWebhookMiddleware: clerkWebhookMiddleware,
-		ClerkService:           clerkService,
 		StationHandler:         stationHandler,
 	}
 }
