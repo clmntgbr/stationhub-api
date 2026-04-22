@@ -24,14 +24,20 @@ const (
 )
 
 type GasPricesUpdateService struct {
-	stationRepository *repository.StationRepository
+	stationRepository      *repository.StationRepository
+	addressRepository      *repository.AddressRepository
+	currentPriceRepository *repository.CurrentPriceRepository
 }
 
 func NewGasPricesUpdateService(
 	stationRepository *repository.StationRepository,
+	addressRepository *repository.AddressRepository,
+	currentPriceRepository *repository.CurrentPriceRepository,
 ) *GasPricesUpdateService {
 	return &GasPricesUpdateService{
-		stationRepository: stationRepository,
+		stationRepository:      stationRepository,
+		addressRepository:      addressRepository,
+		currentPriceRepository: currentPriceRepository,
 	}
 }
 
@@ -90,26 +96,55 @@ func (s *GasPricesUpdateService) processPDV(pdv dto.PDV) error {
 		}
 	}()
 
-	address := &domain.Address{
-		StreetLine1: pdv.Adresse,
-		City:        pdv.Ville,
-		State:       pdv.CP,
-		Country:     "France",
-		Latitude:    pdv.Latitude,
-		Longitude:   pdv.Longitude,
-	}
+	existingStation, err := s.stationRepository.FindByExternalIDWithTx(pdv.ID, tx)
 
-	station := &domain.Station{
-		ExternalID: pdv.ID,
-		Name:       pdv.Adresse + " " + pdv.Ville,
-		Type:       "gas",
-		Services:   pdv.Services.List,
-	}
+	var stationID uuid.UUID
 
-	stationID, err := s.stationRepository.CreateStationWithAddress(station, address, tx)
-	if err != nil {
-		tx.Rollback()
-		return fmt.Errorf("failed to create station with address: %w", err)
+	if err == nil {
+		station := &domain.Station{
+			ID:         existingStation.ID,
+			ExternalID: pdv.ID,
+			Name:       pdv.Adresse + " " + pdv.Ville,
+			Type:       "gas",
+			Services:   pdv.Services.List,
+			AddressID:  existingStation.AddressID,
+		}
+
+		if err := s.stationRepository.UpdateWithTx(station, tx); err != nil {
+			tx.Rollback()
+			return fmt.Errorf("failed to update station: %w", err)
+		}
+
+		stationID = existingStation.ID
+	} else {
+		address := &domain.Address{
+			StreetLine1: pdv.Adresse,
+			City:        pdv.Ville,
+			State:       pdv.CP,
+			Country:     "France",
+			Latitude:    pdv.Latitude,
+			Longitude:   pdv.Longitude,
+		}
+
+		if err := s.addressRepository.Create(address, tx); err != nil {
+			tx.Rollback()
+			return fmt.Errorf("failed to create address: %w", err)
+		}
+
+		station := &domain.Station{
+			ExternalID: pdv.ID,
+			Name:       pdv.Adresse + " " + pdv.Ville,
+			Type:       "gas",
+			Services:   pdv.Services.List,
+			AddressID:  address.ID,
+		}
+
+		if err := s.stationRepository.CreateWithTx(station, tx); err != nil {
+			tx.Rollback()
+			return fmt.Errorf("failed to create station: %w", err)
+		}
+
+		stationID = station.ID
 	}
 
 	if err := s.processPrices(tx, stationID, pdv.Prix); err != nil {
@@ -130,8 +165,7 @@ func (s *GasPricesUpdateService) processPrices(tx *gorm.DB, stationID uuid.UUID,
 	for _, prix := range prices {
 		priceDate, _ := time.Parse("2006-01-02 15:04:05", prix.Maj)
 
-		var existingPrice domain.CurrentPrice
-		err := tx.Where("station_id = ? AND type = ?", stationID, prix.Nom).First(&existingPrice).Error
+		existingPrice, err := s.currentPriceRepository.FindByStationAndType(stationID, prix.Nom, tx)
 
 		if err == nil {
 			if existingPrice.Value != prix.Valeur {
@@ -145,11 +179,11 @@ func (s *GasPricesUpdateService) processPrices(tx *gorm.DB, stationID uuid.UUID,
 				existingPrice.UpdatedAt = now
 			}
 
-			if err := tx.Save(&existingPrice).Error; err != nil {
+			if err := s.currentPriceRepository.Update(existingPrice, tx); err != nil {
 				return err
 			}
 		} else {
-			newPrice := domain.CurrentPrice{
+			newPrice := &domain.CurrentPrice{
 				Price: domain.Price{
 					StationID: stationID,
 					Type:      prix.Nom,
@@ -160,7 +194,7 @@ func (s *GasPricesUpdateService) processPrices(tx *gorm.DB, stationID uuid.UUID,
 				UpdatedAt: now,
 			}
 
-			if err := tx.Create(&newPrice).Error; err != nil {
+			if err := s.currentPriceRepository.Create(newPrice, tx); err != nil {
 				return err
 			}
 		}

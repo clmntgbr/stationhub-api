@@ -3,9 +3,7 @@ package repository
 import (
 	"stationhub-api/domain"
 
-	"github.com/google/uuid"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 type StationRepository struct {
@@ -37,34 +35,21 @@ func (r *StationRepository) FindByExternalID(externalID string) *domain.Station 
 	return &station
 }
 
-func (r *StationRepository) CreateStationWithAddress(station *domain.Station, address *domain.Address, tx *gorm.DB) (uuid.UUID, error) {
-	var existingStation domain.Station
-	err := tx.Select("id", "external_id", "address_id").Where("external_id = ?", station.ExternalID).First(&existingStation).Error
-
-	if err == nil {
-		station.ID = existingStation.ID
-		station.AddressID = existingStation.AddressID
-		
-		result := tx.Omit("Address").Clauses(clause.OnConflict{
-			Columns:   []clause.Column{{Name: "external_id"}},
-			DoUpdates: clause.AssignmentColumns([]string{"services", "name", "type", "updated_at"}),
-		}).Create(station)
-
-		return existingStation.ID, result.Error
+func (r *StationRepository) FindByExternalIDWithTx(externalID string, tx *gorm.DB) (*domain.Station, error) {
+	var station domain.Station
+	err := tx.Select("id", "external_id", "address_id").Where("external_id = ?", externalID).First(&station).Error
+	if err != nil {
+		return nil, err
 	}
+	return &station, nil
+}
 
-	if err := tx.Create(address).Error; err != nil {
-		return uuid.Nil, err
-	}
+func (r *StationRepository) CreateWithTx(station *domain.Station, tx *gorm.DB) error {
+	return tx.Omit("Address").Create(station).Error
+}
 
-	station.AddressID = address.ID
-
-	result := tx.Omit("Address").Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: "external_id"}},
-		DoUpdates: clause.AssignmentColumns([]string{"services", "name", "type", "updated_at"}),
-	}).Create(station)
-
-	return station.ID, result.Error
+func (r *StationRepository) UpdateWithTx(station *domain.Station, tx *gorm.DB) error {
+	return tx.Omit("Address").Updates(station).Error
 }
 
 func (r *StationRepository) BeginTransaction() *gorm.DB {

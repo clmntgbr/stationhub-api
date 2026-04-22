@@ -19,7 +19,13 @@ func NewGasPricesUpdateCommand() *cobra.Command {
 			db := config.ConnectDatabase(cfg)
 			gasFileService := service.NewGasFileService()
 			stationRepository := repository.NewStationRepository(db)
-			gasPricesUpdateService := service.NewGasPricesUpdateService(stationRepository)
+			addressRepository := repository.NewAddressRepository(db)
+			currentPriceRepository := repository.NewCurrentPriceRepository(db)
+			gasPricesUpdateService := service.NewGasPricesUpdateService(
+				stationRepository,
+				addressRepository,
+				currentPriceRepository,
+			)
 
 			zipFilePath, err := gasFileService.DownloadGasFile()
 			if err != nil {
