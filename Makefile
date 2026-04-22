@@ -1,4 +1,4 @@
-.PHONY: dev dev-logs dev-down dev-restart dev-rebuild prod prod-logs prod-down prod-restart build clean shell test help cli
+.PHONY: dev dev-logs dev-down dev-restart dev-rebuild prod prod-logs prod-down prod-restart build build-cli-docker rebuild-cli-docker clean shell test help cli gas-update gas-update-dev gas-update-prod
 
 # ============================================
 # Local Build Commands
@@ -21,11 +21,26 @@ build-cli:
 	@go build -o bin/cli ./cmd/cli
 	@echo "✅ CLI binary ready: bin/cli"
 
+# ============================================
+# Docker Build Commands (for CLI usage)
+# ============================================
+
+build-cli-docker:
+	@echo "🔨 Building CLI binary in Docker container..."
+	@docker-compose exec api go build -o bin/cli ./cmd/cli
+	@echo "✅ CLI binary ready in container: bin/cli"
+
+rebuild-cli-docker:
+	@echo "🔨 Rebuilding CLI binary in Docker container..."
+	@docker-compose exec api rm -f bin/cli
+	@docker-compose exec api go build -o bin/cli ./cmd/cli
+	@echo "✅ CLI binary rebuilt in container"
+
 cli:
-	@./bin/cli
+	@docker-compose exec api ./bin/cli
 
 cli-help:
-	@./bin/cli --help
+	@docker-compose exec api ./bin/cli --help
 
 # ============================================
 # Development commands (docker-compose.yml)
@@ -81,8 +96,27 @@ build-prod:
 	docker build --target production -t api-api:prod .
 
 # ============================================
-# CLI Commands (examples)
+# CLI Commands (via Docker)
 # ============================================
+
+gas-update:
+	@echo "🔄 Running gas:update command..."
+	@docker-compose exec api go build -o bin/cli ./cmd/cli > /dev/null 2>&1
+	@docker-compose exec api ./bin/cli gas:update
+
+gas-update-prod:
+	@echo "🔄 Running gas:update command (production)..."
+	@docker-compose -f docker-compose.prod.yml exec api ./bin/cli gas:update
+
+# ============================================
+# CLI Commands with Auto-Rebuild (for development)
+# ============================================
+
+gas-update-dev:
+	@echo "🔨 Rebuilding CLI..."
+	@docker-compose exec api go build -o bin/cli ./cmd/cli > /dev/null 2>&1
+	@echo "🔄 Running gas:update command..."
+	@docker-compose exec api ./bin/cli gas:update
 
 # ============================================
 # Utility commands
@@ -122,9 +156,11 @@ help:
 	@echo "╚════════════════════════════════════════════════════════╝"
 	@echo ""
 	@echo "📦 Build Commands:"
-	@echo "  make build              Build both server and CLI binaries"
-	@echo "  make build-server       Build only server binary"
-	@echo "  make build-cli          Build only CLI binary"
+	@echo "  make build              Build both server and CLI binaries (local)"
+	@echo "  make build-server       Build only server binary (local)"
+	@echo "  make build-cli          Build only CLI binary (local)"
+	@echo "  make build-cli-docker   Build CLI binary in Docker container"
+	@echo "  make rebuild-cli-docker Rebuild CLI binary in Docker container"
 	@echo ""
 	@echo "🚀 Development:"
 	@echo "  make dev                Start development environment"
@@ -144,8 +180,14 @@ help:
 	@echo "  make build-dev          Build development image"
 	@echo "  make build-prod         Build production image"
 	@echo ""
-	@echo "🤖 CLI Commands:"
+	@echo "🤖 CLI Commands (via Docker):"
 	@echo "  make cli                Run CLI (interactive)"
+	@echo "  make cli-help           Show CLI help"
+	@echo "  make gas-update         Update gas prices (dev)"
+	@echo "  make gas-update-prod    Update gas prices (prod)"
+	@echo ""
+	@echo "🔥 CLI Commands with Auto-Rebuild (for development):"
+	@echo "  make gas-update-dev     Auto-rebuild + update gas prices"
 	@echo ""
 	@echo "🛠️  Utility:"
 	@echo "  make shell              Open shell in dev container"

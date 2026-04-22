@@ -141,15 +141,23 @@ Then the API is exposed on `http://localhost:4000` (mapped to container `3000`).
 
 ### CLI Commands
 
-The CLI provides commands for background tasks and maintenance:
+The CLI provides commands for background tasks and maintenance.
+
+**Important**: Les commandes CLI s'exécutent dans Docker. Compilez d'abord le CLI dans le container:
 
 ```bash
-# Show available commands
-./bin/cli --help
+# 1. Compiler le CLI dans le container (une seule fois)
+make build-cli-docker
+
+# 2. Lancer les commandes
+make sync-orders
 make cli-help
 
+# Ou directement
+docker-compose exec api ./bin/cli sync:orders
+```
 
-See `CLI.md` for detailed CLI documentation.
+See documentation below for more details.
 
 ### Development commands
 
@@ -209,22 +217,20 @@ make shell-prod
 - `make clean`: remove containers/volumes and prune temp/docker cache
 - `make clean-all`: remove all related images, volumes, and prune more aggressively
 
-### CLI Shortcuts
+### CLI Shortcuts (via Docker)
 
+- `make build-cli-docker`: compile CLI in container (required first)
 - `make cli`: run CLI interactively
 - `make cli-help`: show CLI help
-- `make sync-orders`: synchronize orders
-- `make cleanup-expired`: clean up expired data
-- `make db-seed`: seed database
-- `make db-migrate`: run migrations
+- `make sync-orders`: synchronize orders (dev)
+- `make sync-orders-prod`: synchronize orders (prod)
 
 ### Helper Script
 
-Use the helper script for running CLI in different environments:
+Use the helper script for running CLI commands:
 
 ```bash
-./cli.sh local sync:orders           # Run locally
-./cli.sh docker cleanup:expired      # Run in Docker container
+./cli.sh docker sync:orders          # Run in Docker container (recommended)
 ./cli.sh help                        # Show help
 ```
 
@@ -255,9 +261,6 @@ For scheduled tasks in production, see `crontab.example`:
 ```bash
 # Sync orders every hour
 0 * * * * /app/bin/cli sync:orders >> /var/log/stationhub/sync-orders.log 2>&1
-
-# Clean up expired data daily at 3am
-0 3 * * * /app/bin/cli cleanup:expired --days 30 >> /var/log/stationhub/cleanup.log 2>&1
 ```
 
 Or use Docker exec:

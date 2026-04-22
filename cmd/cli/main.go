@@ -16,7 +16,7 @@ func main() {
 	}
 
 	rootCmd.AddCommand(
-		commands.NewSyncOrdersCommand(),
+		commands.NewGasUpdateCommand(),
 	)
 
 	if err := rootCmd.Execute(); err != nil {

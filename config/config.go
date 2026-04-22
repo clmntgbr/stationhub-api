@@ -14,6 +14,7 @@ type Config struct {
 	Environment        string
 	ClerkSecretKey     string
 	ClerkFrontendAPI   string
+	GasFileURL         string
 }
 
 func Load() *Config {
@@ -28,6 +29,7 @@ func Load() *Config {
 		Environment:        getEnv("GO_ENV", "development"),
 		ClerkSecretKey:     getEnv("CLERK_SECRET_KEY", ""),
 		ClerkFrontendAPI:   getEnv("CLERK_FRONTEND_API", ""),
+		GasFileURL:         getEnv("GAS_FILE_URL", ""),
 	}
 }
 
