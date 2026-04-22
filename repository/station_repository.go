@@ -3,6 +3,7 @@ package repository
 import (
 	"stationhub-api/domain"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -36,11 +37,12 @@ func (r *StationRepository) FindByExternalID(externalID string) *domain.Station 
 	return &station
 }
 
-func (r *StationRepository) CreateStationWithAddress(station *domain.Station, address *domain.Address, tx *gorm.DB) error {
+func (r *StationRepository) CreateStationWithAddress(station *domain.Station, address *domain.Address, tx *gorm.DB) (uuid.UUID, error) {
 	var existingStation domain.Station
 	err := tx.Select("id", "external_id", "address_id").Where("external_id = ?", station.ExternalID).First(&existingStation).Error
 
 	if err == nil {
+		station.ID = existingStation.ID
 		station.AddressID = existingStation.AddressID
 		
 		result := tx.Omit("Address").Clauses(clause.OnConflict{
@@ -48,11 +50,11 @@ func (r *StationRepository) CreateStationWithAddress(station *domain.Station, ad
 			DoUpdates: clause.AssignmentColumns([]string{"services", "name", "type", "updated_at"}),
 		}).Create(station)
 
-		return result.Error
+		return existingStation.ID, result.Error
 	}
 
 	if err := tx.Create(address).Error; err != nil {
-		return err
+		return uuid.Nil, err
 	}
 
 	station.AddressID = address.ID
@@ -62,7 +64,7 @@ func (r *StationRepository) CreateStationWithAddress(station *domain.Station, ad
 		DoUpdates: clause.AssignmentColumns([]string{"services", "name", "type", "updated_at"}),
 	}).Create(station)
 
-	return result.Error
+	return station.ID, result.Error
 }
 
 func (r *StationRepository) BeginTransaction() *gorm.DB {

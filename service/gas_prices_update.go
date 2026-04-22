@@ -11,8 +11,11 @@ import (
 	"stationhub-api/repository"
 	"strings"
 	"sync"
+	"time"
 
+	"github.com/google/uuid"
 	"golang.org/x/text/encoding/charmap"
+	"gorm.io/gorm"
 )
 
 const (
@@ -24,8 +27,12 @@ type GasPricesUpdateService struct {
 	stationRepository *repository.StationRepository
 }
 
-func NewGasPricesUpdateService(stationRepository *repository.StationRepository) *GasPricesUpdateService {
-	return &GasPricesUpdateService{stationRepository: stationRepository}
+func NewGasPricesUpdateService(
+	stationRepository *repository.StationRepository,
+) *GasPricesUpdateService {
+	return &GasPricesUpdateService{
+		stationRepository: stationRepository,
+	}
 }
 
 func (s *GasPricesUpdateService) UpdateGasPrices(xmlFilePath string) error {
@@ -99,13 +106,64 @@ func (s *GasPricesUpdateService) processPDV(pdv dto.PDV) error {
 		Services:   pdv.Services.List,
 	}
 
-	if err := s.stationRepository.CreateStationWithAddress(station, address, tx); err != nil {
+	stationID, err := s.stationRepository.CreateStationWithAddress(station, address, tx)
+	if err != nil {
 		tx.Rollback()
 		return fmt.Errorf("failed to create station with address: %w", err)
 	}
 
+	if err := s.processPrices(tx, stationID, pdv.Prix); err != nil {
+		tx.Rollback()
+		return fmt.Errorf("failed to process prices: %w", err)
+	}
+
 	if err := tx.Commit().Error; err != nil {
 		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return nil
+}
+
+func (s *GasPricesUpdateService) processPrices(tx *gorm.DB, stationID uuid.UUID, prices []dto.Prix) error {
+	now := time.Now()
+
+	for _, prix := range prices {
+		priceDate, _ := time.Parse("2006-01-02 15:04:05", prix.Maj)
+
+		var existingPrice domain.CurrentPrice
+		err := tx.Where("station_id = ? AND type = ?", stationID, prix.Nom).First(&existingPrice).Error
+
+		if err == nil {
+			if existingPrice.Value != prix.Valeur {
+				existingPrice.Value = prix.Valeur
+				existingPrice.Date = priceDate
+				existingPrice.UpdatedAt = now
+			} else if priceDate.After(existingPrice.Date) {
+				existingPrice.Date = priceDate
+				existingPrice.UpdatedAt = now
+			} else {
+				existingPrice.UpdatedAt = now
+			}
+
+			if err := tx.Save(&existingPrice).Error; err != nil {
+				return err
+			}
+		} else {
+			newPrice := domain.CurrentPrice{
+				Price: domain.Price{
+					StationID: stationID,
+					Type:      prix.Nom,
+					Value:     prix.Valeur,
+					Currency:  "EUR",
+					Date:      priceDate,
+				},
+				UpdatedAt: now,
+			}
+
+			if err := tx.Create(&newPrice).Error; err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil
