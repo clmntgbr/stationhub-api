@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
-	"stationhub-api/internal/commands"
+	"stationhub-api/command"
 
 	"github.com/spf13/cobra"
 )
@@ -16,7 +16,7 @@ func main() {
 	}
 
 	rootCmd.AddCommand(
-		commands.NewGasUpdateCommand(),
+		command.NewGasPricesUpdateCommand(),
 	)
 
 	if err := rootCmd.Execute(); err != nil {

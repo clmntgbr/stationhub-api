@@ -81,6 +81,16 @@ func (s *GasFileService) Extract(zipFilePath string) (string, error) {
 	return targetPath, nil
 }
 
+func (s *GasFileService) Delete(filePath string) error {
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		return nil
+	}
+	if err := os.Remove(filePath); err != nil {
+		return fmt.Errorf("failed to delete file %s: %w", filePath, err)
+	}
+	return nil
+}
+
 func (s *GasFileService) extractFile(f *zip.File, destPath string) error {
 	if err := os.MkdirAll(filepath.Dir(destPath), 0o755); err != nil {
 		return err
