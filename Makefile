@@ -1,4 +1,31 @@
-.PHONY: dev dev-logs dev-down dev-restart dev-rebuild prod prod-logs prod-down prod-restart build clean shell test help
+.PHONY: dev dev-logs dev-down dev-restart dev-rebuild prod prod-logs prod-down prod-restart build clean shell test help cli
+
+# ============================================
+# Local Build Commands
+# ============================================
+
+build:
+	@echo "🔨 Building server binary..."
+	@go build -o bin/server ./cmd/server
+	@echo "🔨 Building CLI binary..."
+	@go build -o bin/cli ./cmd/cli
+	@echo "✅ Build complete: bin/server and bin/cli"
+
+build-server:
+	@echo "🔨 Building server binary..."
+	@go build -o bin/server ./cmd/server
+	@echo "✅ Server binary ready: bin/server"
+
+build-cli:
+	@echo "🔨 Building CLI binary..."
+	@go build -o bin/cli ./cmd/cli
+	@echo "✅ CLI binary ready: bin/cli"
+
+cli:
+	@./bin/cli
+
+cli-help:
+	@./bin/cli --help
 
 # ============================================
 # Development commands (docker-compose.yml)
@@ -54,6 +81,10 @@ build-prod:
 	docker build --target production -t api-api:prod .
 
 # ============================================
+# CLI Commands (examples)
+# ============================================
+
+# ============================================
 # Utility commands
 # ============================================
 
@@ -69,14 +100,62 @@ test:
 clean:
 	docker-compose down -v
 	docker-compose -f docker-compose.prod.yml down -v
-	rm -rf tmp/
+	rm -rf tmp/ bin/
 	docker system prune -f
 
 clean-all:
 	docker-compose down -v --rmi all
 	docker-compose -f docker-compose.prod.yml down -v --rmi all
-	rm -rf tmp/
+	rm -rf tmp/ bin/
 	docker system prune -af --volumes
 
 lint:
 	docker-compose exec api golangci-lint run --fix
+
+# ============================================
+# Help
+# ============================================
+
+help:
+	@echo "╔════════════════════════════════════════════════════════╗"
+	@echo "║        StationHub API - Available Commands            ║"
+	@echo "╚════════════════════════════════════════════════════════╝"
+	@echo ""
+	@echo "📦 Build Commands:"
+	@echo "  make build              Build both server and CLI binaries"
+	@echo "  make build-server       Build only server binary"
+	@echo "  make build-cli          Build only CLI binary"
+	@echo ""
+	@echo "🚀 Development:"
+	@echo "  make dev                Start development environment"
+	@echo "  make dev-logs           View development logs"
+	@echo "  make dev-down           Stop development environment"
+	@echo "  make dev-restart        Restart development containers"
+	@echo "  make dev-rebuild        Rebuild development environment"
+	@echo ""
+	@echo "🏭 Production:"
+	@echo "  make prod               Build and start production"
+	@echo "  make prod-d             Build and start production (detached)"
+	@echo "  make prod-logs          View production logs"
+	@echo "  make prod-down          Stop production"
+	@echo "  make prod-restart       Restart production"
+	@echo ""
+	@echo "🔨 Docker Build:"
+	@echo "  make build-dev          Build development image"
+	@echo "  make build-prod         Build production image"
+	@echo ""
+	@echo "🤖 CLI Commands:"
+	@echo "  make cli                Run CLI (interactive)"
+	@echo ""
+	@echo "🛠️  Utility:"
+	@echo "  make shell              Open shell in dev container"
+	@echo "  make shell-prod         Open shell in prod container"
+	@echo "  make test               Run tests"
+	@echo "  make lint               Run linter"
+	@echo "  make clean              Clean up containers and tmp files"
+	@echo "  make clean-all          Deep clean (removes images too)"
+	@echo ""
+	@echo "📚 Documentation:"
+	@echo "  See CLI.md for detailed CLI usage"
+	@echo "  Use ./cli.sh for helper script (local/docker)"
+	@echo ""

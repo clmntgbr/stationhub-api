@@ -20,16 +20,30 @@ It includes:
 
 ## Project Structure
 
-- `server.go`: application entry point and route registration
-- `config/`: environment and database configuration
-- `deps/`: dependency wiring
-- `middleware/`: authentication and webhook protection
-- `handler/`: HTTP handlers
-- `service/`: business logic (auth, users, Clerk, webhooks)
-- `repository/`: database access layer
-- `domain/`: data models
-- `dto/`: request/event DTOs
-- `ctxutil/`: Fiber context helpers
+```
+stationhub-api/
+├── cmd/
+│   ├── server/main.go      ← HTTP server entry point
+│   └── cli/main.go         ← CLI entry point (Cobra)
+├── config/                  ← Environment and database configuration
+├── deps/                    ← Dependency wiring
+├── internal/
+│   └── commands/           ← CLI commands (Cobra)
+├── middleware/              ← Authentication and webhook protection
+├── handler/                 ← HTTP handlers
+├── service/                 ← Business logic
+├── repository/              ← Database access layer
+├── domain/                  ← Data models
+├── dto/                     ← Request/event DTOs
+├── ctxutil/                 ← Fiber context helpers
+└── bin/                     ← Compiled binaries (gitignored)
+    ├── server
+    └── cli
+```
+
+The project now uses a **dual-mode architecture**:
+- **HTTP Server** (`cmd/server/main.go`): Fiber web server with API routes
+- **CLI Tool** (`cmd/cli/main.go`): Cobra-based CLI for background tasks, migrations, and maintenance
 
 ## API Overview
 
@@ -100,6 +114,22 @@ Main variables:
 - Docker
 - Docker Compose
 - Make
+- Go 1.25+ (for local builds)
+
+### Build Binaries
+
+Build both server and CLI:
+
+```bash
+make build
+```
+
+Build separately:
+
+```bash
+make build-server  # Only HTTP server
+make build-cli     # Only CLI tool
+```
 
 ### Start development stack
 
@@ -109,7 +139,19 @@ make dev
 
 Then the API is exposed on `http://localhost:4000` (mapped to container `3000`).
 
-Useful commands:
+### CLI Commands
+
+The CLI provides commands for background tasks and maintenance:
+
+```bash
+# Show available commands
+./bin/cli --help
+make cli-help
+
+
+See `CLI.md` for detailed CLI documentation.
+
+### Development commands
 
 ```bash
 make dev-logs
@@ -119,6 +161,7 @@ make dev-rebuild
 make shell
 make test
 make lint
+make help
 ```
 
 ## Production Compose Commands
@@ -166,6 +209,25 @@ make shell-prod
 - `make clean`: remove containers/volumes and prune temp/docker cache
 - `make clean-all`: remove all related images, volumes, and prune more aggressively
 
+### CLI Shortcuts
+
+- `make cli`: run CLI interactively
+- `make cli-help`: show CLI help
+- `make sync-orders`: synchronize orders
+- `make cleanup-expired`: clean up expired data
+- `make db-seed`: seed database
+- `make db-migrate`: run migrations
+
+### Helper Script
+
+Use the helper script for running CLI in different environments:
+
+```bash
+./cli.sh local sync:orders           # Run locally
+./cli.sh docker cleanup:expired      # Run in Docker container
+./cli.sh help                        # Show help
+```
+
 ## Docker Notes
 
 - Development compose file in this repository is `compose.yaml`.
@@ -179,15 +241,30 @@ If your environment does not resolve these names automatically, either:
 
 ## Data Model
 
-The `users` table is auto-migrated at startup with:
+The following tables are auto-migrated at startup:
 
-- `id` (UUID primary key)
-- `clerk_id` (unique)
-- `first_name`
-- `last_name`
-- `banned`
-- `created_at`
-- `updated_at`
+- `users` (UUID primary key, clerk_id unique, first_name, last_name, banned, timestamps)
+- `stations` (station management)
+- `addresses` (location addresses)
+- `google_places` (Google Places integration)
+
+## Background Tasks & Cron Jobs
+
+For scheduled tasks in production, see `crontab.example`:
+
+```bash
+# Sync orders every hour
+0 * * * * /app/bin/cli sync:orders >> /var/log/stationhub/sync-orders.log 2>&1
+
+# Clean up expired data daily at 3am
+0 3 * * * /app/bin/cli cleanup:expired --days 30 >> /var/log/stationhub/cleanup.log 2>&1
+```
+
+Or use Docker exec:
+
+```bash
+docker exec stationhub-api ./bin/cli sync:orders
+```
 
 ## Troubleshooting
 
