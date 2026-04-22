@@ -5,17 +5,20 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"stationhub-api/domain"
 	"stationhub-api/dto"
+	"stationhub-api/repository"
 	"strings"
 
 	"golang.org/x/text/encoding/charmap"
 )
 
 type GasPricesUpdateService struct {
+	stationRepository *repository.StationRepository
 }
 
-func NewGasPricesUpdateService() *GasPricesUpdateService {
-	return &GasPricesUpdateService{}
+func NewGasPricesUpdateService(stationRepository *repository.StationRepository) *GasPricesUpdateService {
+	return &GasPricesUpdateService{stationRepository: stationRepository}
 }
 
 func (s *GasPricesUpdateService) UpdateGasPrices(xmlFilePath string) error {
@@ -25,7 +28,23 @@ func (s *GasPricesUpdateService) UpdateGasPrices(xmlFilePath string) error {
 	}
 
 	for i := 0; i < len(pdvListe.PDVs); i++ {
-		fmt.Println(pdvListe.PDVs[i])
+		station := s.stationRepository.FindByExternalID(pdvListe.PDVs[i].ID)
+		if station == nil {
+			station = &domain.Station{
+				ExternalID: pdvListe.PDVs[i].ID,
+				Name:       pdvListe.PDVs[i].Adresse + " " + pdvListe.PDVs[i].Ville,
+				Type:       "gas",
+				Address: domain.Address{
+					StreetLine1: pdvListe.PDVs[i].Adresse,
+					City:        pdvListe.PDVs[i].Ville,
+					State:       pdvListe.PDVs[i].CP,
+					Country:     "France",
+					Latitude:    pdvListe.PDVs[i].Latitude,
+					Longitude:   pdvListe.PDVs[i].Longitude,
+				},
+			}
+			s.stationRepository.Create(station)
+		}
 	}
 
 	return nil

@@ -100,7 +100,9 @@ build-prod:
 # ============================================
 
 gas-prices-update:
-	@docker-compose exec api go build -o bin/cli ./cmd/cli > /dev/null 2>&1
+	@echo "🔨 Building CLI..."
+	@docker-compose exec api go build -o bin/cli ./cmd/cli
+	@echo "🔄 Running gas:prices:update command..."
 	@docker-compose exec api ./bin/cli gas:prices:update
 
 # ============================================

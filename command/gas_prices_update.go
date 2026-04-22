@@ -2,6 +2,8 @@ package command
 
 import (
 	"fmt"
+	"stationhub-api/config"
+	"stationhub-api/repository"
 	"stationhub-api/service"
 
 	"github.com/spf13/cobra"
@@ -13,8 +15,11 @@ func NewGasPricesUpdateCommand() *cobra.Command {
 		Short: "Update gas prices",
 		Long:  "Fetches and updates gas prices",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			cfg := config.Load()
+			db := config.ConnectDatabase(cfg)
 			gasFileService := service.NewGasFileService()
-			gasPricesUpdateService := service.NewGasPricesUpdateService()
+			stationRepository := repository.NewStationRepository(db)
+			gasPricesUpdateService := service.NewGasPricesUpdateService(stationRepository)
 
 			zipFilePath, err := gasFileService.DownloadGasFile()
 			if err != nil {
@@ -40,12 +45,12 @@ func NewGasPricesUpdateCommand() *cobra.Command {
 
 			fmt.Println("✅ Zip file deleted")
 
-			// err = gasFileService.Delete(extractedPath)
-			// if err != nil {
-			// 	return fmt.Errorf("failed to delete extracted file: %w", err)
-			// }
+			err = gasFileService.Delete(extractedPath)
+			if err != nil {
+				return fmt.Errorf("failed to delete extracted file: %w", err)
+			}
 
-			// fmt.Println("✅ Extracted file deleted")
+			fmt.Println("✅ Extracted file deleted")
 
 			return nil
 		},
