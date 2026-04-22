@@ -33,6 +33,7 @@ func AutoMigrate(db *gorm.DB) {
 		&domain.Address{},
 		&domain.GooglePlace{},
 		&domain.CurrentPrice{},
+		&domain.PriceHistory{},
 	)
 
 	if err != nil {
