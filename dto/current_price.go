@@ -8,6 +8,7 @@ import (
 type CurrentPriceOutput struct {
 	ID        string    `json:"id"`
 	Value     float64   `json:"value"`
+	Type      string    `json:"type"`
 	Currency  string    `json:"currency"`
 	Date      time.Time `json:"date"`
 	UpdatedAt time.Time `json:"updatedAt"`
@@ -25,6 +26,7 @@ func NewCurrentPriceOutput(currentPrice domain.CurrentPrice) CurrentPriceOutput 
 	return CurrentPriceOutput{
 		ID:        currentPrice.ID.String(),
 		Value:     currentPrice.Value,
+		Type:      currentPrice.Type,
 		Currency:  currentPrice.Currency,
 		Date:      currentPrice.Date,
 		UpdatedAt: currentPrice.UpdatedAt,

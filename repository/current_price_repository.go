@@ -15,9 +15,9 @@ func NewCurrentPriceRepository(db *gorm.DB) *CurrentPriceRepository {
 	return &CurrentPriceRepository{db: db}
 }
 
-func (r *CurrentPriceRepository) FindByStationAndType(stationID uuid.UUID, priceType string, tx *gorm.DB) (*domain.CurrentPrice, error) {
+func (r *CurrentPriceRepository) FindByStationAndType(stationID uuid.UUID, priceTypeId int, tx *gorm.DB) (*domain.CurrentPrice, error) {
 	var price domain.CurrentPrice
-	err := tx.Where("station_id = ? AND type = ?", stationID, priceType).First(&price).Error
+	err := tx.Where("station_id = ? AND type_id = ?", stationID, priceTypeId).First(&price).Error
 	if err != nil {
 		return nil, err
 	}

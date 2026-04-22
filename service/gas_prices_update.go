@@ -165,7 +165,7 @@ func (s *GasPricesUpdateService) processPrices(tx *gorm.DB, stationID uuid.UUID,
 	for _, prix := range prices {
 		priceDate, _ := time.Parse("2006-01-02 15:04:05", prix.Maj)
 
-		existingPrice, err := s.currentPriceRepository.FindByStationAndType(stationID, prix.Nom, tx)
+		existingPrice, err := s.currentPriceRepository.FindByStationAndType(stationID, prix.ID, tx)
 
 		if err == nil {
 			if existingPrice.Value != prix.Valeur {
@@ -187,6 +187,7 @@ func (s *GasPricesUpdateService) processPrices(tx *gorm.DB, stationID uuid.UUID,
 				Price: domain.Price{
 					StationID: stationID,
 					Type:      prix.Nom,
+					TypeId:    prix.ID,
 					Value:     prix.Valeur,
 					Currency:  "EUR",
 					Date:      priceDate,
