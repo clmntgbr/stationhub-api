@@ -60,23 +60,11 @@ func (r *StationRepository) BeginTransaction() *gorm.DB {
 func (r *StationRepository) FindNearby(latitude, longitude float64, radiusKm float64) ([]domain.Station, error) {
 	var stations []domain.Station
 
-	orderClause := fmt.Sprintf(`
-		ST_Distance(
-			ST_MakePoint(addresses.longitude, addresses.latitude)::geography,
-			ST_MakePoint(%f, %f)::geography
-		)
-	`, longitude, latitude)
+	point := gorm.Expr("ST_MakePoint(?, ?)::geography", longitude, latitude)
 
 	err := r.db.
 		Joins("JOIN addresses ON addresses.id = stations.address_id").
-		Where(`
-			ST_DWithin(
-				ST_MakePoint(addresses.longitude, addresses.latitude)::geography,
-				ST_MakePoint(?, ?)::geography,
-				?
-			)
-		`, longitude, latitude, radiusKm*1000).
-		Order(orderClause).
+		Where("ST_DWithin(addresses.location, ?, ?)", point, radiusKm*1000).
 		Preload("Address").
 		Preload("CurrentPrices").
 		Limit(100).
