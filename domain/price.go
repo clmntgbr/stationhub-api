@@ -15,6 +15,8 @@ type Price struct {
 	TypeId   int       `gorm:"not null" json:"type_id"`
 	Date     time.Time `gorm:"not null" json:"date"`
 
+	IsLowestPrice bool `gorm:"->;<-:false" json:"is_lowest_price"`
+
 	StationID uuid.UUID `gorm:"type:uuid;not null" json:"station_id"`
 	Station   Station   `gorm:"foreignKey:StationID" json:"station"`
 }

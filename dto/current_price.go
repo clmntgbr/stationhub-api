@@ -13,9 +13,10 @@ type CurrentPriceOutput struct {
 }
 
 type MinimalCurrentPriceOutput struct {
-	Value float64   `json:"value"`
-	Type  string    `json:"type"`
-	Date  time.Time `json:"date"`
+	Value         float64   `json:"value"`
+	Type          string    `json:"type"`
+	Date          time.Time `json:"date"`
+	IsLowestPrice bool      `json:"isLowestPrice"`
 }
 
 func NewCurrentPricesOutput(currentPrices []domain.CurrentPrice) []CurrentPriceOutput {
@@ -36,9 +37,10 @@ func NewMinimalCurrentPricesOutput(currentPrices []domain.CurrentPrice) []Minima
 
 func NewMinimalCurrentPriceOutput(currentPrice domain.CurrentPrice) MinimalCurrentPriceOutput {
 	return MinimalCurrentPriceOutput{
-		Value: currentPrice.Value,
-		Type:  currentPrice.Type,
-		Date:  currentPrice.Date,
+		Value:         currentPrice.Value,
+		Type:          currentPrice.Type,
+		Date:          currentPrice.Date,
+		IsLowestPrice: currentPrice.IsLowestPrice,
 	}
 }
 

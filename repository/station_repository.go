@@ -66,7 +66,12 @@ func (r *StationRepository) FindNearby(latitude, longitude float64, radiusKm flo
 		Joins("JOIN addresses ON addresses.id = stations.address_id").
 		Where("ST_DWithin(addresses.location, ?, ?)", point, radiusKm*1000).
 		Preload("Address").
-		Preload("CurrentPrices").
+		Preload("CurrentPrices", func(db *gorm.DB) *gorm.DB {
+			return db.Select(`
+				*,
+				value = MIN(value) OVER (PARTITION BY type_id) AS is_lowest_price
+			`)
+		}).
 		Limit(100).
 		Find(&stations).Error
 
