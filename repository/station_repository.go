@@ -63,8 +63,10 @@ func (r *StationRepository) FindNearby(latitude, longitude float64, radiusKm flo
 	point := gorm.Expr("ST_MakePoint(?, ?)::geography", longitude, latitude)
 
 	err := r.db.
+		Select("stations.*, ST_Distance(addresses.location, ?) AS distance", point).
 		Joins("JOIN addresses ON addresses.id = stations.address_id").
 		Where("ST_DWithin(addresses.location, ?, ?)", point, radiusKm*1000).
+		Order("distance").
 		Preload("Address").
 		Preload("CurrentPrices", func(db *gorm.DB) *gorm.DB {
 			return db.Select(`
@@ -72,7 +74,7 @@ func (r *StationRepository) FindNearby(latitude, longitude float64, radiusKm flo
 				value = MIN(value) OVER (PARTITION BY type_id) AS is_lowest_price
 			`)
 		}).
-		Limit(100).
+		Limit(200).
 		Find(&stations).Error
 
 	if err != nil {
