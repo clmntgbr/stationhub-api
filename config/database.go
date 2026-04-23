@@ -85,14 +85,11 @@ func CreatePriceHistoryPartitionBase(db *gorm.DB) {
 }
 
 func InitPartitions(db *gorm.DB) {
-	now := time.Now()
+	now := time.Now().UTC()
 
-	_ = CreatePartitionIfNotExists(db, now.Year(), now.Month())
+	_ = CreatePartitionsRange(db, time.Date(now.Year()-1, 1, 1, 0, 0, 0, 0, time.UTC), 12)
 
-	next := now.AddDate(0, 1, 0)
-	_ = CreatePartitionIfNotExists(db, next.Year(), next.Month())
-
-	_ = CreatePartitionsRange(db, now, 12)
+	_ = CreatePartitionsRange(db, time.Date(now.Year(), 1, 1, 0, 0, 0, 0, time.UTC), 24)
 }
 
 func CreateInitialPartitions(db *gorm.DB) error {
