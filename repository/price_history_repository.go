@@ -5,6 +5,7 @@ import (
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type PriceHistoryRepository struct {
@@ -25,7 +26,7 @@ func (r *PriceHistoryRepository) FindByStationAndType(stationID uuid.UUID, price
 }
 
 func (r *PriceHistoryRepository) Create(price *domain.PriceHistory, tx *gorm.DB) error {
-	return tx.Create(price).Error
+	return tx.Clauses(clause.OnConflict{DoNothing: true}).Create(price).Error
 }
 
 func (r *PriceHistoryRepository) Update(price *domain.PriceHistory, tx *gorm.DB) error {
