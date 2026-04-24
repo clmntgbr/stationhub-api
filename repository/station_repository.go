@@ -74,7 +74,7 @@ func (r *StationRepository) FindNearby(latitude, longitude float64, radiusKm flo
 				value = MIN(value) OVER (PARTITION BY type_id) AS is_lowest_price
 			`)
 		}).
-		Limit(200).
+		Limit(100).
 		Find(&stations).Error
 
 	if err != nil {

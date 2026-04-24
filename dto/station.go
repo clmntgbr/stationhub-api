@@ -21,6 +21,12 @@ type MinimalStationOutput struct {
 	CurrentPrices []MinimalCurrentPriceOutput `json:"currentPrices"`
 }
 
+type GetStationsQuery struct {
+	Latitude  float64 `query:"latitude" validate:"required,min=-90,max=90"`
+	Longitude float64 `query:"longitude" validate:"required,min=-180,max=180"`
+	Radius    float64 `query:"radius" validate:"required,min=0,max=1000000"`
+}
+
 func NewStationOutput(station domain.Station) StationOutput {
 	return StationOutput{
 		ID:                   station.ID.String(),

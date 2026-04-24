@@ -192,7 +192,14 @@ func (s *GasPricesUpdateService) processPrices(tx *gorm.DB, stationID uuid.UUID,
 			}
 
 			history := &domain.PriceHistory{
-				Price: newPrice.Price,
+				Price: domain.Price{
+					StationID: newPrice.StationID,
+					Type:      newPrice.Type,
+					TypeId:    newPrice.TypeId,
+					Value:     newPrice.Value,
+					Currency:  newPrice.Currency,
+					Date:      newPrice.Date,
+				},
 			}
 			if err := s.priceHistoryRepository.Create(history, tx); err != nil {
 				return fmt.Errorf("failed to create price history: %w", err)
@@ -214,7 +221,14 @@ func (s *GasPricesUpdateService) processPrices(tx *gorm.DB, stationID uuid.UUID,
 		}
 
 		history := &domain.PriceHistory{
-			Price: existingPrice.Price,
+			Price: domain.Price{
+				StationID: existingPrice.StationID,
+				Type:      existingPrice.Type,
+				TypeId:    existingPrice.TypeId,
+				Value:     existingPrice.Value,
+				Currency:  existingPrice.Currency,
+				Date:      existingPrice.Date,
+			},
 		}
 
 		if err := s.priceHistoryRepository.Create(history, tx); err != nil {

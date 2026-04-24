@@ -15,8 +15,8 @@ func NewStationService(stationRepository *repository.StationRepository) *Station
 	}
 }
 
-func (s *StationService) GetStations() ([]dto.MinimalStationOutput, error) {
-	stations, err := s.stationRepository.FindNearby(48.852907290717354, 2.350256431388731, 30)
+func (s *StationService) GetStations(q dto.GetStationsQuery) ([]dto.MinimalStationOutput, error) {
+	stations, err := s.stationRepository.FindNearby(q.Latitude, q.Longitude, q.Radius)
 	if err != nil {
 		return nil, err
 	}
